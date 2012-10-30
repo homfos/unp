@@ -65,12 +65,22 @@ writen(int fd, const void *vptr, size_t n)
 	return(n);
 }
 /* end writen */
+static void read_alarm(int);
 
 void
 str_echo(int sockfd)
 {
 	ssize_t		n;
 	char		buf[MAXLINE];
+
+	Sigfunc 	*sigfunc;
+
+	sigfunc = signal(SIGALRM, read_alarm);
+
+	if (alarm(5) != 0)
+	{
+		err_msg("alarm already set!\n");
+	}
 
 again:
 	while ( (n = read(sockfd, buf, MAXLINE)) > 0)
@@ -80,6 +90,18 @@ again:
 		goto again;
 	else if (n < 0)
 		err_sys("str_echo: read error");
+
+	alarm(0);
+	signal(SIGALRM, sigfunc);
+
+	return;
+}
+
+void
+read_alarm(int signo)
+{
+	printf("test test\n");
+	exit;
 }
 
 void
@@ -107,5 +129,37 @@ str_cli(FILE *fp, int sockfd)
 				return;		/* all done */
 			Writen(sockfd, sendline, strlen(sendline));
 		}
+	}
+}
+
+void
+dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
+{
+	int			n;
+	socklen_t	len;
+	char		mesg[MAXLINE];
+
+	for ( ; ; ) {
+		len = clilen;
+		n = Recvfrom(sockfd, mesg, MAXLINE, 0, pcliaddr, &len);
+
+		Sendto(sockfd, mesg, n, 0, pcliaddr, len);
+	}
+}
+
+void
+dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+	int	n;
+	char	sendline[MAXLINE], recvline[MAXLINE + 1];
+
+	while (Fgets(sendline, MAXLINE, fp) != NULL) {
+
+		Sendto(sockfd, sendline, strlen(sendline), 0, pservaddr, servlen);
+
+		n = Recvfrom(sockfd, recvline, MAXLINE, 0, NULL, NULL);
+
+		recvline[n] = 0;	/* null terminate */
+		Fputs(recvline, stdout);
 	}
 }

@@ -104,3 +104,23 @@ void Close(int sockfd)
 	if (close(sockfd) == -1)
 		err_sys("close error\n");
 }
+
+ssize_t Recvfrom(int s, void *buf, size_t len, int flags,
+		struct sockaddr *from, socklen_t *fromlen)
+{
+	ssize_t		n;
+
+	if ((n = recvfrom(s, buf, len, flags,
+			from, fromlen)) == -1)
+		err_sys("recv error\n");
+
+	return	n;
+}
+
+void Sendto(int s, const void *buf, size_t len, int flags, 
+		const struct sockaddr *to, socklen_t tolen)
+{
+	if (sendto(s, buf, len, flags, 
+				to, tolen) == -1)
+		err_sys("send to error\n");
+}
